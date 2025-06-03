@@ -1,1 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Bomber</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        body {            font-family: 'Arial', sans-serif;            margin: 0;            padding: 0;            background: linear-gradient(135deg, #a8c0ff, #3f2b96); /* Gradient background */            display: flex;            justify-content: center;            align-items: center;            min-height: 100vh;            color: #333;            overflow-x: hidden; /* Prevent horizontal scroll */        }        .container {            width: 380px;            padding: 35px;            background-color: rgba(255, 255, 255, 0.95); /* Slightly less transparent */            border-radius: 25px;            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35); /* Stronger shadow */            backdrop-filter: blur(12px); /* Stronger blur */            position: relative;            z-index: 1;            animation: fadeIn 0.8s ease-out;        }        @keyframes fadeIn {            from { opacity: 0; transform: translateY(-20px); }            to { opacity: 1; transform: translateY(0); }        }
+        
+        h1 {            text-align: center;            color: #2c3e50; /* Darker heading */            font-size: 28px;            margin-bottom: 25px;            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);        }        .input-group {            position: relative;            margin-bottom: 25px;        }        .input-group input {            width: 100%;            padding: 12px 18px;            font-size: 17px;            border: 1px solid #c0d9e4; /* Lighter border */            border-radius: 12px; /* Slightly more rounded */            background-color: rgba(255, 255, 255, 0.5); /* More transparent input */            color: #333;            transition: all 0.3s ease;        }        .input-group input:focus {            outline: none;            border-color: #007bff;            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Focus glow */        }        .input-group label {            position: absolute;            top: -12px;            left: 15px;            background-color: #fff;            padding: 0 7px;            font-size: 13px;            color: #555;            transition: all 0.3s ease;            pointer-events: none; /* Make label non-interactive */            z-index: 2; /* Ensure label is above input */        }        /* Style label when input is focused or has content */        .input-group input:focus + label,        .input-group input:not(:placeholder-shown) + label {            color: #007bff;            font-weight: bold;            transform: translateY(-5px); /* Small upward shift */        }
+        
+        .send-btn {            display: flex; /* Use flexbox for centering spinner */            justify-content: center;            align-items: center;            width: 100%;            padding: 14px;            font-size: 18px;            font-weight: bold;            text-align: center;            background-color: #007bff;            color: white;            border: none;            border-radius: 35px;            cursor: pointer;            transition: background-color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);            position: relative;            overflow: hidden;        }        .send-btn:hover:not(:disabled) {            background-color: #0056b3;            transform: scale(1.03);        }        .send-btn:active:not(:disabled) {            transform: scale(0.98);            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.6);        }        .send-btn:disabled {            background-color: #a0c2e6; /* Lighter disabled color */            cursor: not-allowed;            opacity: 0.7;        }        .spinner {            border: 4px solid rgba(255, 255, 255, 0.3);            border-top: 4px solid #fff;            border-radius: 50%;            width: 24px;            height: 24px;            animation: spin 1s linear infinite;            margin-right: 10px; /* Space between spinner and text */        }        @keyframes spin {            0% { transform: rotate(0deg); }            100% { transform: rotate(360deg); }        }
+        
+        /* Popup Styles */        .popup-overlay {            position: fixed;            top: 0;            left: 0;            width: 100%;            height: 100%;            background-color: rgba(0, 0, 0, 0.6);            display: flex;            justify-content: center;            align-items: center;            z-index: 1000;            opacity: 0;            visibility: hidden;            transition: opacity 0.3s ease, visibility 0.3s ease;        }        .popup-overlay.show {            opacity: 1;            visibility: visible;        }        .popup-content {            background-color: #fff;            padding: 30px;            border-radius: 15px;            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);            text-align: center;            width: 320px; /* Adjusted width to better fit ad/timer */            max-height: 90vh; /* Ensure it fits on smaller screens */            overflow-y: auto; /* Enable scroll if content is too long */            transform: translateY(20px);            transition: transform 0.3s ease;            display: flex; /* Use flexbox to organize content vertically */            flex-direction: column;            justify-content: space-between; /* Push disclaimer to the bottom */        }        .popup-overlay.show .popup-content {            transform: translateY(0);        }        .popup-content h2 {            color: #28a745; /* Success green */            margin-bottom: 15px;            font-size: 24px;            display: flex;            align-items: center;            justify-content: center;        }        .popup-content h2 i {            margin-right: 10px;        }        .popup-content p {            font-size: 16px;            line-height: 1.6;            margin-bottom: 20px;            color: #555;        }        .popup-content .disclaimer {            font-size: 13px;            color: #888;            margin-top: 25px; /* Increased margin to push it down */            border-top: 1px solid #eee;            padding-top: 15px;            /* New: Added to push to bottom */            margin-top: auto; /* Pushes element to the bottom */        }
+        
+        /* General Ad Space */        .ad-space {            margin-top: 30px;            text-align: center;            background-color: #f0f0f0;            border: 1px dashed #ccc;            padding: 20px;            border-radius: 10px;            font-size: 14px;            color: #666;            min-height: 100px; /* Minimum height for ad content */            display: flex;            justify-content: center;            align-items: center;            flex-direction: column;            gap: 10px; /* Space between ad elements */        }        .ad-space strong {            color: #333;        }        .ad-space img {            max-width: 100%;            height: auto;        }
+        
+        /* Popup Specific Ad Space */        .popup-ad-space {            margin: 25px auto; /* Margin inside popup */            width: 90%; /* Fit within popup */            max-width: 300px; /* Max width for consistency */            /* Inherits styles from .ad-space as well */        }        .popup-ad-space img {            border-radius: 8px; /* Slightly rounded corners for ad image */        }
+        
+        /* Timer Section (Main - below form) */        .timer-section {            margin-top: 30px;            text-align: center;            background-color: rgba(255, 255, 255, 0.9);            padding: 20px;            border-radius: 15px;            box-shadow: 0 4px 15px rgba(0,0,0,0.1);        }        .timer-section p {            font-size: 16px;            color: #555;            margin-bottom: 15px;        }        .countdown-circle-container {            width: 80px;            height: 80px;            position: relative;            margin: 0 auto 15px;            background-color: #f5f5f5; /* Light background for clearer circle */            border-radius: 50%;            box-shadow: inset 0 0 5px rgba(0,0,0,0.1); /* Inner shadow for depth */        }        .countdown-circle {            width: 100%;            height: 100%;            border-radius: 50%;            background: conic-gradient(#007bff 0deg, #e0e0e0 0deg); /* Initial state */            display: flex;            justify-content: center;            align-items: center;            font-size: 28px;            font-weight: bold;            color: #007bff;            transition: background 0.1s linear; /* Smooth gradient update */        }        .countdown-text {            position: absolute;            top: 50%;            left: 50%;            transform: translate(-50%, -50%);            font-size: 28px;            font-weight: bold;            color: #007bff;            z-index: 2; /* Above the background gradient */            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Text shadow for clarity */        }        .hidden {            display: none;        }
+        
+        /* Popup Timer Section - Enhanced Styles */        .popup-timer-section {            margin-top: 20px;            text-align: center;            padding: 15px;            border-radius: 10px;            background-color: #fefefe; /* Very light background */            border: 1px solid #eee; /* Subtle border */            box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Light shadow */        }        .popup-timer-section p {            font-size: 15px;            color: #666;            margin-bottom: 10px;        }        .popup-countdown-circle-container {            width: 70px; /* Slightly larger for better visibility */            height: 70px;            position: relative;            margin: 0 auto 10px; /* Adjusted margin */            background-color: #f5f5f5; /* Light background for clearer circle */            border-radius: 50%;            box-shadow: inset 0 0 5px rgba(0,0,0,0.1); /* Inner shadow for depth */        }        .popup-countdown-circle {            width: 100%;            height: 100%;            border-radius: 50%;            background: conic-gradient(#ffc107 0deg, #e0e0e0 0deg); /* Yellow/Orange color for popup timer */            display: flex;            justify-content: center;            align-items: center;            font-size: 26px; /* Larger font size for timer */            font-weight: bold;            color: #ffc107;            transition: background 0.1s linear;        }        .popup-countdown-text {            position: absolute;            top: 50%;            left: 50%;            transform: translate(-50%, -50%);            font-size: 26px;            font-weight: bold;            color: #ffc107;            z-index: 2;            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Text shadow for clarity */        }
+        
+        /* --- Media Queries for Responsiveness --- */
+        
+        /* For screens smaller than 480px (e.g., most mobile phones) */        @media (max-width: 480px) {            .container {                width: 90%; /* Make container take more width on small screens */                padding: 25px 20px; /* Adjust padding */            }
+            h1 {                font-size: 24px; /* Smaller heading for mobile */            }
+            .input-group input {                font-size: 16px; /* Adjust input font size */                padding: 10px 15px;            }
+            .input-group label {                font-size: 12px; /* Adjust label font size */                top: -10px;            }
+            .send-btn {                font-size: 16px; /* Adjust button font size */                padding: 12px;            }
+            .spinner {                width: 20px; /* Smaller spinner */                height: 20px;            }
+            /* Adjust main ad space */            .ad-space {                padding: 15px;                min-height: 80px;            }
+            /* Adjust main timer section */            .timer-section {                padding: 15px;            }            .countdown-circle-container {                width: 70px; /* Smaller main timer circle */                height: 70px;            }            .countdown-text {                font-size: 24px; /* Smaller main timer text */            }
+            /* Adjust popup content for mobile */            .popup-content {                width: 90%; /* Popup takes more width */                padding: 25px 20px;            }            .popup-content h2 {                font-size: 20px; /* Smaller popup heading */            }            .popup-content p {                font-size: 14px; /* Smaller popup text */            }            .popup-content .disclaimer {                font-size: 11px; /* Smaller disclaimer */                padding-top: 10px;            }                        /* Adjust popup ad space */            .popup-ad-space {                margin: 20px auto;            }            .popup-ad-space img {                max-width: 180px; /* Smaller ad image in popup */                height: auto;            }
+            /* Adjust popup timer section */            .popup-timer-section {                padding: 10px;            }            .popup-timer-section p {                font-size: 13px;            }            .popup-countdown-circle-container {                width: 60px; /* Even smaller popup timer circle */                height: 60px;            }            .popup-countdown-circle, .popup-countdown-text {                font-size: 20px; /* Smaller popup timer text */            }        }
+        /* For screens between 481px and 768px (e.g., tablets) */        @media (min-width: 481px) and (max-width: 768px) {            .container {                width: 80%; /* Adjust width for tablets */                max-width: 450px;            }            /* You can add more specific adjustments for tablets here if needed */        }
+        /* For screens larger than 768px (desktops), default styles apply */    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Send Call</h1>
 
+        <form id="sendCallForm">
+            <div class="input-group">
+                <input type="text" id="number" name="number" placeholder=" " required>
+                <label for="number">Enter phone number</label>
+            </div>
+            <div class="input-group">
+                <input type="number" id="limits" name="limits" placeholder=" " required min="1" max="100">
+                <label for="limits">Enter limits (e.g., 5)</label>
+            </div>
+            <button type="submit" class="send-btn" id="sendBtn">
+                <span class="button-text">Send Call</span>
+                <div class="spinner hidden"></div>
+            </button>
+        </form>
+
+        <div class="ad-space">
+            <script type="text/javascript">
+                atOptions = {
+                    'key': '15266df712ef95e90a698724308bd993',
+                    'format': 'iframe',
+                    'height': 50,
+                    'width': 320,
+                    'params': {}
+                };
+            </script>
+            <script type="text/javascript" src="//www.highperformanceformat.com/15266df712ef95e90a698724308bd993/invoke.js"></script>
+        </div>
+
+        <div class="timer-section hidden" id="mainTimerSection">
+            <p>Please wait for the next call bomb.</p>
+            <div class="countdown-circle-container">
+                <div class="countdown-circle" id="mainCountdownCircle">
+                    <span class="countdown-text" id="mainCountdownText">15</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="successPopup">
+        <div class="popup-content">
+            <div>
+                <h2><i class="fas fa-check-circle"></i> Call Request Initiated!</h2>
+                <p><span id="popupNumber"></span> নম্বরে <span id="popupLimits"></span> সংখ্যক কল পাঠানোর অনুরোধ করা হয়েছে।</p>
+                
+                <div class="ad-space popup-ad-space">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key': 'ee0040b80f96e59dce795bac69243379',
+                            'format': 'iframe',
+                            'height': 60,
+                            'width': 468,
+                            'params': {}
+                        };
+                    </script>
+                    <script type="text/javascript" src="//www.highperformanceformat.com/ee0040b80f96e59dce795bac69243379/invoke.js"></script>
+                </div>
+
+                <div class="popup-timer-section">
+                    <p>Next request available in:</p>
+                    <div class="popup-countdown-circle-container">
+                        <div class="popup-countdown-circle" id="popupCountdownCircle">
+                            <span class="popup-countdown-text" id="popupCountdownText">15</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="disclaimer">দয়া করে এর অপব্যবহার করবেন না। এটি শুধুমাত্র পরীক্ষামূলক এবং শিক্ষামূলক উদ্দেশ্যে ব্যবহৃত হয়।</p>
+        </div>
+    </div>
+
+    <script>
+        // আপনার সার্ভারলেস ফাংশনের এন্ডপয়েন্ট
+        // এটি Vercel-এ ডিপ্লয় করার পর আপনার অ্যাপ্লিকেশনের URL-এর সাপেক্ষে অ্যাক্সেসযোগ্য হবে।
+        const MY_SERVERLESS_API_ENDPOINT = "/api/send-call"; 
+
+        const sendCallForm = document.getElementById('sendCallForm');
+        const sendBtn = document.getElementById('sendBtn');
+        const buttonText = sendBtn.querySelector('.button-text');
+        const spinner = sendBtn.querySelector('.spinner');
+
+        const successPopup = document.getElementById('successPopup');
+        const popupNumber = document.getElementById('popupNumber');
+        const popupLimits = document.getElementById('popupLimits');
+        const popupCountdownCircle = document.getElementById('popupCountdownCircle');
+        const popupCountdownText = document.getElementById('popupCountdownText');
+
+        const mainTimerSection = document.getElementById('mainTimerSection');
+        const mainCountdownCircle = document.getElementById('mainCountdownCircle');
+        const mainCountdownText = document.getElementById('mainCountdownText');
+
+        let mainCountdownInterval;
+        let popupCountdownInterval;
+        let originalBtnText = buttonText.textContent;
+
+        sendCallForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const number = document.getElementById('number').value;
+            const limits = document.getElementById('limits').value;
+
+            // বাটনের অবস্থা পরিবর্তন এবং স্পিনার দেখানো
+            sendBtn.disabled = true;
+            buttonText.textContent = 'Sending...';
+            spinner.classList.remove('hidden');
+
+            try {
+                // আপনার সার্ভারলেস ফাংশনে POST অনুরোধ পাঠান
+                const response = await fetch(MY_SERVERLESS_API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ number, limits })
+                });
+
+                if (!response.ok) {
+                    // সার্ভার থেকে আসা ত্রুটি বার্তা দেখান
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.error || 'Failed to send call request.'}`);
+                    console.error('Serverless function error:', errorData);
+                    resetButton();
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('Success:', data); // সার্ভার থেকে প্রাপ্ত সফল ডেটা কনসোলে দেখানো
+
+                // পপ-আপ মেসেজ দেখানো
+                popupNumber.textContent = number;
+                popupLimits.textContent = limits;
+                successPopup.classList.add('show');
+
+                // পপ-আপের ভেতরের টাইমার শুরু করা
+                startPopupCountdown(15);
+                // মূল ১৫ সেকেন্ডের টাইমার (ফর্মের নিচে) শুরু করা
+                startMainCountdown(15);
+
+            } catch (error) {
+                console.error('Network or unexpected error:', error);
+                alert('An error occurred. Please try again.');
+                resetButton();
+            }
+        });
+
+        // পপ-আপের বাইরে ক্লিক করলে বন্ধ করা
+        successPopup.addEventListener('click', (e) => {
+            // যদি ক্লিক সরাসরি overlay এর উপর হয়, content এর উপর না হয়
+            if (e.target === successPopup) {
+                successPopup.classList.remove('show');
+                // পপ-আপ বন্ধ হলে ভেতরের টাইমারও বন্ধ করুন
+                clearInterval(popupCountdownInterval);
+                // মূল টাইমার চলমান থাকবে
+            }
+        });
+
+        function startMainCountdown(duration) {
+            let timer = duration;
+            mainTimerSection.classList.remove('hidden');
+            mainCountdownText.textContent = timer;
+            updateCircleProgress(mainCountdownCircle, mainCountdownText, timer, duration, '#007bff'); // প্রথম আপডেট
+
+            clearInterval(mainCountdownInterval); // নিশ্চিত করুন আগের কোন টাইমার চলছে না
+            mainCountdownInterval = setInterval(() => {
+                timer--;
+                mainCountdownText.textContent = timer;
+                updateCircleProgress(mainCountdownCircle, mainCountdownText, timer, duration, '#007bff');
+
+                if (timer <= 0) {
+                    clearInterval(mainCountdownInterval);
+                    mainTimerSection.classList.add('hidden');
+                    resetButton(); // কাউন্টার শেষে বাটন পুনরায় সচল করা
+                }
+            }, 1000); // প্রতি সেকেন্ডে আপডেট
+        }
+
+        function startPopupCountdown(duration) {
+            let timer = duration;
+            popupCountdownText.textContent = timer;
+            updateCircleProgress(popupCountdownCircle, popupCountdownText, timer, duration, '#ffc107'); // প্রথম আপডেট
+
+            clearInterval(popupCountdownInterval); // নিশ্চিত করুন আগের কোন টাইমার চলছে না
+            popupCountdownInterval = setInterval(() => {
+                timer--;
+                popupCountdownText.textContent = timer;
+                updateCircleProgress(popupCountdownCircle, popupCountdownText, timer, duration, '#ffc107');
+
+                if (timer <= 0) {
+                    clearInterval(popupCountdownInterval);
+                    // পপ-আপের ভেতরের টাইমার শেষ হলে পপ-আপ বন্ধ করে দিন
+                    successPopup.classList.remove('show');
+                }
+            }, 1000); // প্রতি সেকেন্ডে আপডেট
+        }
+
+        // বৃত্তাকার টাইমারের প্রোগ্রেস আপডেট করার জন্য একটি জেনেরিক ফাংশন
+        function updateCircleProgress(circleElement, textElement, currentTimer, totalDuration, color) {
+            const percentage = (currentTimer / totalDuration) * 360;
+            circleElement.style.background = `conic-gradient(${color} ${percentage}deg, #e0e0e0 ${percentage}deg)`;
+        }
+
+        function resetButton() {
+            // বাটনকে তার প্রাথমিক অবস্থায় ফিরিয়ে আনা
+            sendBtn.disabled = false;
+            buttonText.textContent = originalBtnText;
+            spinner.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
